@@ -1,205 +1,352 @@
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-import { getDatabase, ref, onValue, runTransaction, push } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+/* =====================================
+   PAGE LOADER
+===================================== */
 
-const firebaseConfig = { apiKey: "AIzaSyDNtkM7hLeIsD2HzWxQKJFH8fsXOVKrv18", authDomain: "tanvir-gallery-free.firebaseapp.com", databaseURL: "https://tanvir-gallery-free-default-rtdb.firebaseio.com", projectId: "tanvir-gallery-free", storageBucket: "tanvir-gallery-free.firebasestorage.app", messagingSenderId: "442605910126", appId: "1:442605910126:web:b89792cb6204a5b7eb0e7f" };
-const app = initializeApp(firebaseConfig);
-const db = getDatabase(app);
+window.addEventListener("load", () => {
 
-// --- 1. PREMIUM SITE PRELOADER ---
-const preloaderHTML = `<div id="site-preloader" style="position:fixed; top:0; left:0; width:100%; height:100%; background:#ffffff; z-index:99999; display:flex; flex-direction:column; justify-content:center; align-items:center; transition:opacity 0.6s ease-out;"><div class="loader-pulse"></div><div style="margin-top:20px; font-family:'Outfit', sans-serif; color:#64748b; font-size:0.9rem; letter-spacing:2px; font-weight:600; text-transform:uppercase; animation:fadeIn 1s infinite alternate;">Loading</div><style>.loader-pulse { position: relative; width: 60px; height: 60px; background: #2563eb; border-radius: 50%; animation: pulse-ring 1.5s cubic-bezier(0.215, 0.61, 0.355, 1) infinite; } .loader-pulse::after { content: ''; position: absolute; left: 0; top: 0; width: 100%; height: 100%; background: #fff; border-radius: 50%; animation: pulse-dot 1.5s cubic-bezier(0.455, 0.03, 0.515, 0.955) -0.4s infinite; } @keyframes pulse-ring { 0% { transform: scale(0.33); } 80%, 100% { opacity: 0; } } @keyframes pulse-dot { 0% { transform: scale(0.8); } 50% { transform: scale(1); } 100% { transform: scale(0.8); } } @keyframes fadeIn { from { opacity: 0.5; } to { opacity: 1; } }</style></div>`;
-if (!document.getElementById('site-preloader')) { document.body.insertAdjacentHTML('afterbegin', preloaderHTML); }
+  const loader = document.querySelector(".loader");
 
-// --- 2. PRO SCROLL PROGRESS BAR ---
-const scrollBar = document.createElement('div');
-scrollBar.id = 'pro-scroll-bar';
-Object.assign(scrollBar.style, { position: 'fixed', top: '0', left: '0', height: '4px', background: 'linear-gradient(90deg, #2563eb, #ec4899)', zIndex: '9999', width: '0%', transition: 'width 0.1s' });
-document.body.appendChild(scrollBar);
-window.addEventListener('scroll', () => {
-    const winScroll = document.body.scrollTop || document.documentElement.scrollTop;
-    const height = document.documentElement.scrollHeight - document.documentElement.clientHeight;
-    const scrolled = (winScroll / height) * 100;
-    scrollBar.style.width = scrolled + "%";
+  setTimeout(() => {
+    loader.classList.add("hide");
+  }, 700);
+
 });
 
-// --- 3. ADVANCED VISITOR TRACKING ---
-if (!localStorage.getItem('admin_bypass')) {
-    const visitRef = ref(db, 'site_stats/visits');
-    runTransaction(visitRef, (currentVisits) => { return (currentVisits || 0) + 1; });
 
-    if (!sessionStorage.getItem('logged_device')) {
-        fetch('https://ipwho.is/').then(response => response.json()).then(data => {
-            const ua = navigator.userAgent;
-            let deviceType = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(ua) ? "Mobile" : "Desktop";
-            const success = data.success !== false;
-            push(ref(db, 'visit_logs'), { ip: data.ip || 'Unknown', city: success ? data.city : 'Unknown City', country: success ? data.country : 'Unknown Country', country_code: success ? data.country_code.toLowerCase() : 'bd', org: success ? (data.connection ? data.connection.org : data.isp) : 'Unknown ISP', device_type: deviceType, raw_agent: ua, time: new Date().toLocaleString() });
-            sessionStorage.setItem('logged_device', 'true');
-        }).catch(() => {
-            push(ref(db, 'visit_logs'), { city: 'Unknown', country: 'Unknown', country_code: 'bd', device_type: "Unknown", raw_agent: navigator.userAgent, time: new Date().toLocaleString() });
-            sessionStorage.setItem('logged_device', 'true');
-        });
-    }
+/* =====================================
+   NAVBAR SCROLL EFFECT
+===================================== */
+
+const navbar = document.querySelector(".navbar");
+
+function updateNavbar() {
+
+  if (window.scrollY > 40) {
+    navbar.classList.add("scrolled");
+  } else {
+    navbar.classList.remove("scrolled");
+  }
+
 }
 
-// --- DYNAMIC SITE CONTENT ---
-onValue(ref(db, 'site_content'), (snap) => {
-    const d = snap.val();
-    if(d) {
-        const setTxt = (id, val) => { const el = document.getElementById(id); if(el && val) el.innerText = val; };
-        const setHref = (id, val) => { const el = document.getElementById(id); if(el && val) el.href = val; };
-        if(d.hero) { setTxt('heroSubtitle', d.hero.subtitle); setTxt('heroTitle', d.hero.title); setTxt('heroDesc', d.hero.desc); }
-        if(d.about) { setTxt('aboutTitle', d.about.title); setTxt('aboutSubtitle', d.about.subtitle); setTxt('aboutDesc', d.about.desc); setTxt('aboutLoc', d.about.location); setTxt('aboutPhone', d.about.phone); setTxt('aboutEmail', d.about.email); }
-        if(d.links) { setHref('linkFB', d.links.fb); setHref('linkInsta', d.links.insta); setHref('linkWA', d.links.wa); }
-    }
+window.addEventListener("scroll", updateNavbar);
+
+updateNavbar();
+
+
+/* =====================================
+   MOBILE MENU
+===================================== */
+
+const menuButton = document.querySelector(".menu-btn");
+const mobileMenu = document.querySelector(".mobile-menu");
+const mobileLinks = document.querySelectorAll(".mobile-menu a");
+
+function toggleMenu() {
+
+  const active = mobileMenu.classList.toggle("active");
+
+  menuButton.classList.toggle("active", active);
+
+  document.body.classList.toggle("menu-open", active);
+
+}
+
+menuButton.addEventListener("click", toggleMenu);
+
+mobileLinks.forEach(link => {
+
+  link.addEventListener("click", () => {
+
+    mobileMenu.classList.remove("active");
+    menuButton.classList.remove("active");
+
+    document.body.classList.remove("menu-open");
+
+  });
+
 });
 
-// --- STANDARD FEATURES ---
-onValue(ref(db, 'hero'), (snap) => { if(snap.val()?.imageUrl) document.getElementById('dynamicHeroImg').src = snap.val().imageUrl; });
-onValue(ref(db, 'profile'), (snap) => { if(snap.val()?.imageUrl) document.getElementById('dynamicProfileImg').src = snap.val().imageUrl; });
 
-// 1. HOME WORKS (3D Carousel Animation)
-const carousel = document.getElementById('carousel');
-if(carousel) { 
-    onValue(ref(db, 'home_works'), (snap) => { 
-        const data = snap.val(); 
-        carousel.innerHTML = ""; 
-        if(data) { 
-            const images = Object.values(data).reverse(); 
-            let activeIndex = 0;
+/* =====================================
+   REVEAL ON SCROLL
+===================================== */
 
-            images.forEach((item, index) => { 
-                const card = document.createElement('div'); 
-                card.className = "card"; 
-                card.innerHTML = `<img src="${item.url}" loading="lazy">`; 
-                
-                // Click logic: Bring to front or open full screen
-                card.addEventListener('click', () => {
-                    if (activeIndex === index) {
-                        // Clicked on the active card -> open lightbox
-                        window.openLightboxFromURL(item.url);
-                    } else {
-                        // Clicked on side card -> make it active
-                        activeIndex = index;
-                        updateCarousel();
-                    }
-                });
+const revealElements =
+  document.querySelectorAll(".reveal");
 
-                carousel.appendChild(card); 
-            }); 
+const revealObserver =
+  new IntersectionObserver(
 
-            const cards = carousel.querySelectorAll('.card');
+    entries => {
 
-            function updateCarousel() {
-                const total = images.length;
-                cards.forEach((card, index) => {
-                    card.className = 'card'; // Reset classes
-                    if (index === activeIndex) {
-                        card.classList.add('active');
-                    } else if (index === (activeIndex - 1 + total) % total) {
-                        card.classList.add('prev1');
-                    } else if (index === (activeIndex + 1) % total) {
-                        card.classList.add('next1');
-                    } else if (index === (activeIndex - 2 + total) % total) {
-                        card.classList.add('prev2');
-                    } else if (index === (activeIndex + 2) % total) {
-                        card.classList.add('next2');
-                    } else {
-                        card.classList.add('hidden');
-                    }
-                });
+      entries.forEach(entry => {
+
+        if (entry.isIntersecting) {
+
+          entry.target.classList.add("visible");
+
+          revealObserver.unobserve(entry.target);
+
+        }
+
+      });
+
+    },
+
+    {
+      threshold: 0.12
+    }
+
+  );
+
+revealElements.forEach(element => {
+
+  revealObserver.observe(element);
+
+});
+
+
+/* =====================================
+   CURSOR GLOW
+===================================== */
+
+const cursorGlow =
+  document.querySelector(".cursor-glow");
+
+let mouseX = 0;
+let mouseY = 0;
+
+let currentX = 0;
+let currentY = 0;
+
+window.addEventListener("mousemove", event => {
+
+  mouseX = event.clientX;
+  mouseY = event.clientY;
+
+});
+
+function animateCursor() {
+
+  currentX += (mouseX - currentX) * 0.08;
+  currentY += (mouseY - currentY) * 0.08;
+
+  cursorGlow.style.left = `${currentX}px`;
+  cursorGlow.style.top = `${currentY}px`;
+
+  requestAnimationFrame(animateCursor);
+
+}
+
+animateCursor();
+
+
+/* =====================================
+   HERO PARALLAX
+===================================== */
+
+const heroGrid =
+  document.querySelector(".hero-grid");
+
+window.addEventListener("scroll", () => {
+
+  if (!heroGrid) return;
+
+  const scroll =
+    window.scrollY;
+
+  heroGrid.style.transform =
+    `translateY(${scroll * 0.12}px)`;
+
+});
+
+
+/* =====================================
+   ACTIVE NAVIGATION
+===================================== */
+
+const sections =
+  document.querySelectorAll("main section[id]");
+
+const navLinks =
+  document.querySelectorAll(".nav-links a");
+
+const sectionObserver =
+  new IntersectionObserver(
+
+    entries => {
+
+      entries.forEach(entry => {
+
+        if (entry.isIntersecting) {
+
+          navLinks.forEach(link => {
+
+            link.classList.remove("active");
+
+            if (
+              link.getAttribute("href") ===
+              `#${entry.target.id}`
+            ) {
+
+              link.classList.add("active");
+
             }
 
-            // Initial render
-            updateCarousel();
+          });
 
-            // Auto-play interval
-            if (window.carouselInterval) clearInterval(window.carouselInterval);
-            window.carouselInterval = setInterval(() => {
-                activeIndex = (activeIndex + 1) % images.length;
-                updateCarousel();
-            }, 3500);
-
-            setTimeout(() => { if(typeof AOS !== 'undefined') AOS.refreshHard(); }, 600); 
-        } else {
-            carousel.innerHTML = "<p>No works found.</p>";
         }
-    }); 
-}
 
-// 2. SDGs
-const sdgGrid = document.getElementById('sdgGrid');
-if(sdgGrid) { onValue(ref(db, 'sdgs'), (snap) => { const data = snap.val(); sdgGrid.innerHTML = ""; if(data) Object.values(data).reverse().forEach((item, index) => { sdgGrid.innerHTML += ` <a href="${item.link}" target="_blank" class="sdg-card" data-aos="fade-up" data-aos-delay="${(index % 3) * 100}"> <div class="sdg-img"><img src="${item.image}"></div> <div class="sdg-text"><h3>${item.title}</h3></div> </a>`; }); }); }
+      });
 
-// 3. MY CREATIONS
-const creationsBar = document.getElementById('creationsBar');
-if(creationsBar) { 
-    onValue(ref(db, 'creations'), (snap) => { 
-        const data = snap.val(); 
-        if(data) {
-            creationsBar.innerHTML = ""; 
-            Object.values(data).reverse().forEach((item) => { 
-                creationsBar.innerHTML += `
-                <a href="${item.link}" target="_blank" class="creation-item">
-                    <img src="${item.image}" alt="${item.title}">
-                    <span>${item.title}</span>
-                </a>`; 
-            }); 
-        } 
-    }); 
-}
+    },
 
-// 4. PHOTOGRAPHY
-const photoGrid = document.getElementById('photoGrid');
-if (photoGrid) {
-    onValue(ref(db, 'home_photography'), (snap) => {
-        const data = snap.val();
-        photoGrid.innerHTML = "";
-        if (data) {
-            const images = Object.values(data).reverse().slice(0, 3); 
-            images.forEach((item, index) => {
-                photoGrid.innerHTML += `
-                <div class="sdg-card" data-aos="fade-up" data-aos-delay="${index * 100}" onclick="window.openLightboxFromURL('${item.url}')" style="cursor: pointer;">
-                    <div class="sdg-img" style="height: 250px;">
-                        <img src="${item.url}" style="width: 100%; height: 100%; object-fit: cover; transition: 0.5s;">
-                    </div>
-                </div>`;
-            });
-        } else {
-            photoGrid.innerHTML = `<p style="text-align:center; grid-column: 1/-1; color: #999;">Loading Photos...</p>`;
-        }
+    {
+      rootMargin: "-35% 0px -55% 0px"
+    }
+
+  );
+
+sections.forEach(section => {
+
+  sectionObserver.observe(section);
+
+});
+
+
+/* =====================================
+   PROJECT IMAGE TILT
+===================================== */
+
+const projectCards =
+  document.querySelectorAll(".project-card");
+
+projectCards.forEach(card => {
+
+  card.addEventListener("mousemove", event => {
+
+    if (window.innerWidth < 900) return;
+
+    const rect =
+      card.getBoundingClientRect();
+
+    const x =
+      event.clientX - rect.left;
+
+    const y =
+      event.clientY - rect.top;
+
+    const centerX =
+      rect.width / 2;
+
+    const centerY =
+      rect.height / 2;
+
+    const rotateX =
+      ((y - centerY) / centerY) * -1.5;
+
+    const rotateY =
+      ((x - centerX) / centerX) * 1.5;
+
+    card.style.transform =
+      `perspective(900px)
+       rotateX(${rotateX}deg)
+       rotateY(${rotateY}deg)`;
+
+  });
+
+  card.addEventListener("mouseleave", () => {
+
+    card.style.transform =
+      "perspective(900px) rotateX(0) rotateY(0)";
+
+  });
+
+});
+
+
+/* =====================================
+   SMOOTH ANCHOR SCROLL
+===================================== */
+
+document
+  .querySelectorAll('a[href^="#"]')
+  .forEach(anchor => {
+
+    anchor.addEventListener("click", function(event) {
+
+      const target =
+        document.querySelector(
+          this.getAttribute("href")
+        );
+
+      if (!target) return;
+
+      event.preventDefault();
+
+      target.scrollIntoView({
+        behavior: "smooth",
+        block: "start"
+      });
+
     });
+
+  });
+
+
+/* =====================================
+   MAGNETIC BUTTON EFFECT
+===================================== */
+
+const magneticButtons =
+  document.querySelectorAll(
+    ".primary-btn, .secondary-btn, .nav-button"
+  );
+
+magneticButtons.forEach(button => {
+
+  button.addEventListener("mousemove", event => {
+
+    if (window.innerWidth < 900) return;
+
+    const rect =
+      button.getBoundingClientRect();
+
+    const x =
+      event.clientX -
+      rect.left -
+      rect.width / 2;
+
+    const y =
+      event.clientY -
+      rect.top -
+      rect.height / 2;
+
+    button.style.transform =
+      `translate(${x * 0.08}px, ${y * 0.08}px)`;
+
+  });
+
+  button.addEventListener("mouseleave", () => {
+
+    button.style.transform = "";
+
+  });
+
+});
+
+
+/* =====================================
+   YEAR
+===================================== */
+
+const year =
+  document.querySelector(".footer-bottom span");
+
+if (year) {
+
+  year.innerHTML =
+    `© ${new Date().getFullYear()} Tanvir Tasin`;
+
 }
-
-// --- HELPER FUNCTIONS ---
-window.openLightboxFromURL = (url) => { const lb = document.getElementById('lightbox'); document.getElementById('lightbox-img').src = url; lb.classList.add('active'); document.body.style.overflow = 'hidden'; }
-window.openModal = (modalId) => { document.getElementById(modalId).style.display = 'flex'; }
-window.closeModal = (event, modalId) => { if (event.target.id === modalId || event.target.tagName === 'BUTTON') { document.getElementById(modalId).style.display = 'none'; } }
-window.goToPage = (url) => { document.getElementById('pageTransition').classList.add('active'); setTimeout(() => { window.location.href = url; }, 500); }
-window.closeLightbox = (event) => { if (event.target.id === 'lightbox' || event.target.tagName === 'I') { document.getElementById('lightbox').classList.remove('active'); document.body.style.overflow = 'auto'; } }
-window.scrollToTop = () => { window.scrollTo({top: 0, behavior: 'smooth'}); }
-
-// --- FAST PRELOADER FIX ---
-function removePreloader() { 
-    if(typeof AOS !== 'undefined') AOS.init({ duration: 800, once: true }); 
-
-    const loader = document.getElementById('site-preloader');
-    if(loader) { 
-        loader.style.opacity = '0'; 
-        setTimeout(() => loader.remove(), 200); 
-    }
-}
-
-if (document.readyState === 'complete') {
-    removePreloader();
-} else {
-    window.addEventListener('load', removePreloader);
-}
-setTimeout(removePreloader, 3000); // 3 second fallback force-remove
-
-window.onscroll = function() { const btn = document.getElementById("backToTop"); if(btn) btn.style.display = (window.scrollY > 300) ? "flex" : "none"; };
-
-window.triggerCameraAnim = (btn) => {
-    if (!btn.classList.contains('animate')) {
-        btn.classList.add('animate');
-        setTimeout(() => { window.goToPage('photography.html'); }, 3800);
-    }
-};
